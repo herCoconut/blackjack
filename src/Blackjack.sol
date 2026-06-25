@@ -93,7 +93,8 @@ contract Blackjack is VRFConsumerBaseV2, ConfirmedOwner {
 
         if (payout > 0) {
             if (address(this).balance < payout) revert InsufficientPrizes();
-            payable(game.player).transfer(payout);
+            (bool sent, ) = payable(game.player).call{value: payout}("");
+            require(sent, "Payout transfer failed");
         }
 
         emit GameResult(game.player, requestId, outcome, playerScore, dealerScore, payout);
@@ -109,7 +110,8 @@ contract Blackjack is VRFConsumerBaseV2, ConfirmedOwner {
     }
 
     function withdraw(uint256 amount, address payable recipient) external onlyOwner {
-        recipient.transfer(amount);
+        (bool sent, ) = recipient.call{value: amount}("");
+        require(sent, "Withdraw transfer failed");
     }
 
     function _resolveScores(uint256 seed) internal pure returns (uint8 playerScore, uint8 dealerScore) {
